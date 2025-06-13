@@ -1,0 +1,65 @@
+name:                stm-trie
+version:             0.0.0.0
+github:              "parsonsmatt/stm-trie"
+license:             BSD-3-Clause
+author:              "Matt Parsons"
+maintainer:          "parsonsmatt@gmail.com"
+copyright:           "2025 Matt Parsons"
+
+extra-source-files:
+- README.md
+- CHANGELOG.md
+
+# Metadata used when publishing your package
+synopsis:            A variant of `stm-containers` with nesting
+category:            Data structures, STM, Concurrency
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/parsonsmatt/stm-trie#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- stm-containers
+- list-t
+- focus
+- stm
+- hashable
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+
+default-language: GHC2021
+
+default-extensions:
+  - DataKinds
+  - TypeOperators
+  - GADTs
+  - TypeFamilies
+  - TypeApplications
+  - RequiredTypeArguments
+
+library:
+  source-dirs: src
+
+tests:
+  stm-trie-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - stm-trie
+    - hspec
+    build-tools:
+      - hspec-discover

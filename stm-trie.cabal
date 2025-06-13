@@ -1,0 +1,84 @@
+cabal-version: 2.2
+
+-- This file has been generated from package.yaml by hpack version 0.38.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           stm-trie
+version:        0.0.0.0
+synopsis:       A variant of `stm-containers` with nesting
+description:    Please see the README on GitHub at <https://github.com/parsonsmatt/stm-trie#readme>
+category:       Data structures, STM, Concurrency
+homepage:       https://github.com/parsonsmatt/stm-trie#readme
+bug-reports:    https://github.com/parsonsmatt/stm-trie/issues
+author:         Matt Parsons
+maintainer:     parsonsmatt@gmail.com
+copyright:      2025 Matt Parsons
+license:        BSD-3-Clause
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/parsonsmatt/stm-trie
+
+library
+  exposed-modules:
+      StmContainers.StaticTrie
+      StmContainers.Trie
+  other-modules:
+      Paths_stm_trie
+  autogen-modules:
+      Paths_stm_trie
+  hs-source-dirs:
+      src
+  default-extensions:
+      DataKinds
+      TypeOperators
+      GADTs
+      TypeFamilies
+      TypeApplications
+      RequiredTypeArguments
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+      base >=4.7 && <5
+    , focus
+    , hashable
+    , list-t
+    , stm
+    , stm-containers
+  default-language: GHC2021
+
+test-suite stm-trie-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      StmContainers.StaticTrieSpec
+      Paths_stm_trie
+  autogen-modules:
+      Paths_stm_trie
+  hs-source-dirs:
+      test
+  default-extensions:
+      DataKinds
+      TypeOperators
+      GADTs
+      TypeFamilies
+      TypeApplications
+      RequiredTypeArguments
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-tool-depends:
+      hspec-discover:hspec-discover
+  build-depends:
+      base >=4.7 && <5
+    , focus
+    , hashable
+    , hspec
+    , list-t
+    , stm
+    , stm-containers
+    , stm-trie
+  default-language: GHC2021
