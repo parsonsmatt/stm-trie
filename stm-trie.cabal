@@ -27,8 +27,8 @@ source-repository head
 
 library
   exposed-modules:
-      StmContainers.StaticTrie
       StmContainers.Trie
+      StmContainers.Trie.Internal
   other-modules:
       Paths_stm_trie
   autogen-modules:
@@ -42,12 +42,14 @@ library
       TypeFamilies
       TypeApplications
       RequiredTypeArguments
+      BlockArguments
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       base >=4.7 && <5
     , focus
     , hashable
     , list-t
+    , mtl
     , stm
     , stm-containers
   default-language: GHC2021
@@ -56,7 +58,7 @@ test-suite stm-trie-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      StmContainers.StaticTrieSpec
+      StmContainers.TrieSpec
       Paths_stm_trie
   autogen-modules:
       Paths_stm_trie
@@ -69,6 +71,7 @@ test-suite stm-trie-test
       TypeFamilies
       TypeApplications
       RequiredTypeArguments
+      BlockArguments
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-tool-depends:
       hspec-discover:hspec-discover
@@ -78,6 +81,7 @@ test-suite stm-trie-test
     , hashable
     , hspec
     , list-t
+    , mtl
     , stm
     , stm-containers
     , stm-trie

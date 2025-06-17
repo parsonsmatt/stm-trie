@@ -23,6 +23,7 @@ dependencies:
 - base >= 4.7 && < 5
 - stm-containers
 - list-t
+- mtl
 - focus
 - stm
 - hashable
@@ -46,6 +47,7 @@ default-extensions:
   - TypeFamilies
   - TypeApplications
   - RequiredTypeArguments
+  - BlockArguments
 
 library:
   source-dirs: src

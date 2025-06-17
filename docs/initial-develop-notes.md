@@ -80,3 +80,41 @@ We could define the logic for tuples directly.
 However, this appears to be a case where recursion over an `HList` may be much more convenient.
 We can create a class `ToHList` and this will help make this more reasonable.
 
+The form I ended up with is:
+
+```haskell
+data StaticTrieNode xs v where
+    StaticTrieKeyNil 
+        :: TVar (Maybe v) 
+        -> StaticTrieNode '[] v
+    StaticTrieKeyBranch 
+        :: Hashable x 
+        => Map x (StaticTrieNode xs v) 
+        -> StaticTrieNode (x ': xs) v
+
+data HList xs where
+    HNil :: HList '[]
+    HCons :: NewStaticTrieNode ks => k -> HList ks -> HList (k ': ks)
+```
+
+I'm not too thrilled with it, but it did let me define `lookup` and `insert`.
+
+# Actually...
+
+OK, so there's static tries and dynamic tries.
+But I think dynamic tries are actually probably much easier to implement and deal with, and they're more generally useful.
+
+The big difference is that a dynamic trie must also contain a `TVar (Maybe a)` at each branch.
+But, because there's no fixed type-level list of keys, we also don't need to conflate our types with the structure of the key fragments.
+
+```haskell
+data DynamicTrieNode k v
+    = Leaf (TVar (Maybe a))
+    | Branch (TVar (Maybe a)) (Map k (DynamicTrieNode k v))
+```
+
+This results in a simpler API `lookup :: Hashable k => [k] -> DynamicTrieNode k v -> STM (Maybe v)`.
+`new` and `insert` can also use list keys here, which makes this all quite easy.
+Interestingly enough, this also means that `lookup @String` will be an alphabet trie automatically.
+
+Actually, `Leaf` and `Branch` are unnecessary - the possibility of emptiness may be represented as an empty map.
