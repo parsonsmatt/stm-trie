@@ -55,4 +55,29 @@ spec = do
                 Trie.null t
             t `shouldBe` False
 
+    describe "delete" do
+        it "works" do
+            xs <- atomically do
+                t <- Trie.new
+                Trie.insert ["hello", "world"] 'a' t
+                Trie.insert ["hello", "goodbye"] 'b' t
+                Trie.delete ["hello"] t
+                Trie.delete ["hello", "world"] t
+                Trie.toList t
+            xs `shouldMatchList`
+                [ ( ["hello", "goodbye"]
+                  , 'b'
+                  )
+                ]
 
+    describe "deleteUnder" do
+        it "works" do
+            xs <- atomically do
+                t <- Trie.new
+                Trie.insert [] 'c' t
+                Trie.insert ["hello", "world"] 'a' t
+                Trie.insert ["hello", "goodbye"] 'b' t
+                Trie.deleteUnder ["hello"] t
+                Trie.delete ["hello", "world"] t
+                Trie.toList @[] t
+            xs `shouldMatchList` [([], 'c')]

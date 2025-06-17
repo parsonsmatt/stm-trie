@@ -4,6 +4,7 @@
 
 module StmContainers.Trie.Internal where
 
+import Data.Foldable
 import Data.Maybe
 import Control.Monad
 import Control.Monad.Trans
@@ -27,6 +28,10 @@ data TrieNode k v
 --
 -- @since 0.0.1.0
 newtype Trie k v = Trie { unTrie :: TVar (TrieNode k v) }
+
+overTrie :: (TrieNode k v -> STM r) -> Trie k v -> STM r
+overTrie k (Trie t) =
+    readTVar t >>= k
 
 -- | Create a new and empty 'Trie'.
 --
@@ -87,6 +92,27 @@ lookup keys' t = do
                 pure Nothing
             Just n ->
                 go ks n
+
+-- | Deletes the entry located precisely at the path determined by @[k]@.
+-- This will not delete other entries that have @[k]@ as a prefix. For
+-- that, see 'deleteUnder'.
+delete :: Hashable k => [k] -> Trie k v -> STM ()
+delete keys = overTrie (go keys)
+  where
+    go [] (Node here _) =
+        writeTVar here Nothing
+    go (k:ks) (Node _ there) = do
+        mn <- Map.lookup k there
+        forM_ mn (go ks)
+
+deleteUnder :: Hashable k => [k] -> Trie k v -> STM ()
+deleteUnder = overTrie . go
+  where
+    go [] (Node here there) = do
+        writeTVar here Nothing
+        Map.reset there
+    go (k:ks) (Node _ there) = do
+        traverse_ (go ks) =<< Map.lookup k there
 
 null :: Trie k v -> STM Bool
 null t = go =<< readTVar (unTrie t)

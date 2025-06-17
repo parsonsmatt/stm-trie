@@ -1,10 +1,17 @@
 module StmContainers.Trie
-    ( Trie
+    ( -- * Datatype
+      Trie
+      -- * Creation
     , new
     , newIO
-    , insert
+      -- * Query
     , lookup
     , null
+      -- * Modification
+    , insert
+    , delete
+    , deleteUnder
+      -- * Consuming
     , toList
     , toListNonAtomic
     , listT
