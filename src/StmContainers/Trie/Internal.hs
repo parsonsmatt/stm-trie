@@ -125,5 +125,5 @@ listTGeneric readVar mapToListT = go mempty <=< lift . readVar . unTrie
         ma <- lift $ readVar here
         maybe id (ListT.cons . (,) prefix) ma $ do
             (k, v) <- mapToListT there
-            let prefix' = prefix <> pure k
+            let !prefix' = prefix <> pure k
             go prefix' v
