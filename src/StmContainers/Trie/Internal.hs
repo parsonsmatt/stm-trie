@@ -2,6 +2,10 @@
 {-# language QuantifiedConstraints #-}
 {-# language BangPatterns #-}
 
+-- | This module contains internals to the package. Breaking changes here
+-- will not be reflected as part of the major version of this package.
+--
+-- @since 0.0.1.0
 module StmContainers.Trie.Internal where
 
 import Data.Foldable
@@ -138,6 +142,7 @@ size = overTrie (go 0)
         ma <- readTVar here
         let here' = if isJust ma then acc + 1 else acc
         ListT.fold (\ !acc' (_, n) -> go acc' n) here' $ Map.listT there
+{-# INLINEABLE size #-}
 
 -- | Return whether or not the 'Trie' has an elements.
 --
@@ -222,7 +227,7 @@ focus (Focus.Focus conceal reveal) = overTrie . go
                         pure ()
                     Focus.Remove ->
                         pure ()
-                    Focus.Set a ->
+                    Focus.Set !a ->
                         writeTVar here (Just a)
                 pure result
             Just v -> do
@@ -232,7 +237,7 @@ focus (Focus.Focus conceal reveal) = overTrie . go
                         pure ()
                     Focus.Remove ->
                         writeTVar here Nothing
-                    Focus.Set a ->
+                    Focus.Set !a ->
                         writeTVar here (Just a)
                 pure result
 
@@ -246,12 +251,82 @@ focus (Focus.Focus conceal reveal) = overTrie . go
                         pure ()
                     Focus.Remove ->
                         pure ()
-                    Focus.Set a -> do
+                    Focus.Set !a -> do
                         newNode <- mkNewNode (Just a)
                         Map.insert newNode k there
                 pure result
             Just n ->
                 go ks n
+
+-- | Use a 'Focus' on the path @[k]@ provided, with access to the children.
+--
+-- @since 0.0.1.0
+focusChildren :: Hashable k => Focus.Focus (Maybe v, Map k (TrieNode k v)) STM r -> [k] -> Trie k v -> STM r
+focusChildren (Focus.Focus _ reveal) [] t = do
+    let trieVar = unTrie t
+    Node here there <- readTVar trieVar
+    mv <- readTVar here
+    (result, change) <- reveal (mv, there)
+    case change of
+        Focus.Leave ->
+            pure ()
+        Focus.Remove -> do
+            writeTVar here Nothing
+            Map.reset there
+        Focus.Set (mv', newThere) -> do
+            newNode <- Node <$> newTVar mv' <*> pure newThere
+            writeTVar trieVar newNode
+    pure result
+focusChildren (Focus.Focus conceal reveal) (k:ks) t = do
+    let trieVar = unTrie t
+    Node _ there <- readTVar trieVar
+    mnode <- Map.lookup k there
+    case mnode of
+        Nothing -> do
+            (result, change) <- conceal
+            case change of
+                Focus.Leave ->
+                    pure ()
+                Focus.Remove ->
+                    pure ()
+                Focus.Set (mv', newThere) -> do
+                    newNode <- Node <$> newTVar mv' <*> pure newThere
+                    Map.insert newNode k there
+            pure result
+
+        Just n ->
+            go there k ks n
+  where
+    go prevMap prevKey [] (Node here there) = do
+        mv <- readTVar here
+        (result, change) <- reveal (mv, there)
+        case change of
+            Focus.Leave ->
+                pure ()
+            Focus.Remove -> do
+                writeTVar here Nothing
+                Map.reset there
+            Focus.Set (mv', newThere) -> do
+                newNode <- Node <$> newTVar mv' <*> pure newThere
+                Map.insert newNode prevKey prevMap
+        pure result
+
+    go _ _ (k':ks') (Node _ there) = do
+        mnode <- Map.lookup k' there
+        case mnode of
+            Nothing -> do
+                (result, change) <- conceal
+                case change of
+                    Focus.Leave ->
+                        pure ()
+                    Focus.Remove -> do
+                        pure ()
+                    Focus.Set (mv', newThere) -> do
+                        newNode <- Node <$> newTVar mv' <*> pure newThere
+                        Map.insert newNode k' there
+                pure result
+            Just node ->
+                go there k' ks' node
 
 -- | Internal. Create a new 'TrieNode' and evaluate the contents of the
 -- inner 'Maybe' to WHNF.

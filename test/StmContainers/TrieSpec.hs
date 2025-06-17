@@ -178,4 +178,3 @@ spec = do
                     mr `shouldBe` Just 'a'
                     r' `shouldBe` Just 'a'
             r
-
