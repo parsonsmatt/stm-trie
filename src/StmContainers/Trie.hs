@@ -13,6 +13,7 @@ module StmContainers.Trie
     , delete
     , deleteChildren
     , reset
+    , focus
       -- * Consuming
     , toList
     , toListNonAtomic

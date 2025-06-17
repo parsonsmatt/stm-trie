@@ -14,6 +14,7 @@ import qualified StmContainers.Map as Map
 import Data.Hashable
 import ListT (ListT)
 import qualified ListT as ListT
+import qualified Focus
 
 -- | The internal representation of a 'Trie'.
 --
@@ -206,3 +207,53 @@ listTGeneric readVar mapToListT = go mempty <=< lift . readVar . unTrie
             (k, v) <- mapToListT there
             let !prefix' = prefix <> pure k
             go prefix' v
+
+-- | Apply a 'Focus' to the path of the keys @[k]@.
+--
+--
+-- @since 0.0.1.0
+focus :: Hashable k => Focus.Focus v STM r -> [k] -> Trie k v -> STM r
+focus (Focus.Focus conceal reveal) = overTrie . go
+  where
+    go [] (Node here _) = do
+        mv <- readTVar here
+        case mv of
+            Nothing -> do
+                (result, change) <- conceal
+                case change of
+                    Focus.Leave ->
+                        pure ()
+                    Focus.Remove ->
+                        pure ()
+                    Focus.Set a ->
+                        writeTVar here (Just a)
+                pure result
+            Just v -> do
+                (result, change) <- reveal v
+                case change of
+                    Focus.Leave ->
+                        pure ()
+                    Focus.Remove ->
+                        writeTVar here Nothing
+                    Focus.Set a ->
+                        writeTVar here (Just a)
+                pure result
+
+    go (k:ks) (Node _ there) = do
+        mn <- Map.lookup k there
+        case mn of
+            Nothing -> do
+                (result, change) <- conceal
+                case change of
+                    Focus.Leave ->
+                        pure ()
+                    Focus.Remove ->
+                        pure ()
+                    Focus.Set a -> do
+                        here' <- newTVar (Just a)
+                        there' <- Map.new
+                        let newNode = Node here' there'
+                        Map.insert newNode k there
+                pure result
+            Just n ->
+                go ks n

@@ -1,9 +1,11 @@
 {-# language ViewPatterns #-}
 module StmContainers.TrieSpec where
 
+import Control.Monad
 import Data.Traversable
 import Control.Monad.IO.Class
 import qualified Data.Set as Set
+import qualified Focus
 import Data.Foldable
 import Test.Hspec
 import Test.Hspec.QuickCheck (prop)
@@ -161,3 +163,19 @@ spec = do
                 Trie.size t
 
             r === (length ks - length keysToDelete)
+
+    describe "focus" do
+        it "works" do
+            r <- atomically do
+                t <- Trie.new
+                Trie.insert ["hello", "goodbye"] 'a' t
+                Trie.insert ["hello", "goodbye", "ok"] 'a' t
+                mr <- Trie.focus (Focus.lookup <* Focus.delete) ["hello", "goodbye"] t
+                r <- Trie.lookup ["hello", "goodbye"] t
+                r' <- Trie.lookup ["hello", "goodbye", "ok"] t
+                pure do
+                    r `shouldBe` Nothing
+                    mr `shouldBe` Just 'a'
+                    r' `shouldBe` Just 'a'
+            r
+
