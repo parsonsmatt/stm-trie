@@ -1,5 +1,4 @@
 restylers:
-  - cabal-fmt
   - fourmolu
   - stylish-haskell:
       enabled: false
