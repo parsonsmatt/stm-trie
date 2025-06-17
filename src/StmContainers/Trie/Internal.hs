@@ -58,6 +58,9 @@ insert keys' !v t = do
     go [] (Node here _) =
         writeTVar here (Just v)
     go (k:ks) (Node _ there) = do
+        -- I tried to use 'Map.focus' here, thinking that it would be
+        -- faster. However, in my extremely dumb performance testing, this
+        -- implementation was significantly faster.
         mn <- Map.lookup k there
         case mn of
             Nothing -> do
