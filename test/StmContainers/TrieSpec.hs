@@ -14,6 +14,7 @@ spec = do
             atomically do
                 Trie.insert ["goodbye"] 1 t
                 Trie.insert ["hello", "world"] 3 t
+                Trie.insert ["hello", "yes"] 1 t
                 Trie.insert ["hello", "yes"] 2 t
             xs <- Trie.toListNonAtomic t
             xs `shouldMatchList`
