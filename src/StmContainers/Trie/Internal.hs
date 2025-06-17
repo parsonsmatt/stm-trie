@@ -1,6 +1,6 @@
-{-# language StrictData #-}
-{-# language QuantifiedConstraints #-}
-{-# language BangPatterns #-}
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE StrictData #-}
 
 -- | This module contains internals to the package. Breaking changes here
 -- will not be reflected as part of the major version of this package.
@@ -8,17 +8,17 @@
 -- @since 0.0.1.0
 module StmContainers.Trie.Internal where
 
-import Data.Foldable
-import Data.Maybe
+import Control.Concurrent.STM
 import Control.Monad
 import Control.Monad.Trans
-import Control.Concurrent.STM
-import StmContainers.Map (Map)
-import qualified StmContainers.Map as Map
+import Data.Foldable
 import Data.Hashable
+import Data.Maybe
+import qualified Focus
 import ListT (ListT)
 import qualified ListT as ListT
-import qualified Focus
+import StmContainers.Map (Map)
+import qualified StmContainers.Map as Map
 
 -- | The internal representation of a 'Trie'.
 --
@@ -32,7 +32,7 @@ data TrieNode k v
 -- be used where concurrent access to a nested state is desirable.
 --
 -- @since 0.0.1.0
-newtype Trie k v = Trie { unTrie :: TVar (TrieNode k v) }
+newtype Trie k v = Trie {unTrie :: TVar (TrieNode k v)}
 
 overTrie :: (TrieNode k v -> STM r) -> Trie k v -> STM r
 overTrie k (Trie t) =
@@ -61,12 +61,12 @@ newIO = do
 -- The value is evaluated to WHNF before inserting.
 --
 -- @since 0.0.1.0
-insert :: Hashable k => [k] -> v -> Trie k v -> STM ()
+insert :: (Hashable k) => [k] -> v -> Trie k v -> STM ()
 insert keys !v = overTrie (go keys)
   where
     go [] (Node here _) =
         writeTVar here (Just v)
-    go (k:ks) (Node _ there) = do
+    go (k : ks) (Node _ there) = do
         -- I tried to use 'Map.focus' here, thinking that it would be
         -- faster. However, in my extremely dumb performance testing, this
         -- implementation was significantly faster.
@@ -82,12 +82,12 @@ insert keys !v = overTrie (go keys)
 -- | Lookup an element at the path given by @[k]@.
 --
 -- @since 0.0.1.0
-lookup :: Hashable k => [k] -> Trie k v -> STM (Maybe v)
+lookup :: (Hashable k) => [k] -> Trie k v -> STM (Maybe v)
 lookup = overTrie . go
   where
     go [] (Node here _) = do
         readTVar here
-    go (k:ks) (Node _ rest) = do
+    go (k : ks) (Node _ rest) = do
         mn <- Map.lookup k rest
         case mn of
             Nothing ->
@@ -100,12 +100,12 @@ lookup = overTrie . go
 -- that, see 'deleteUnder'.
 --
 -- @since 0.0.1.0
-delete :: Hashable k => [k] -> Trie k v -> STM ()
+delete :: (Hashable k) => [k] -> Trie k v -> STM ()
 delete = overTrie . go
   where
     go [] (Node here _) =
         writeTVar here Nothing
-    go (k:ks) (Node _ there) = do
+    go (k : ks) (Node _ there) = do
         mn <- Map.lookup k there
         forM_ mn (go ks)
 
@@ -115,19 +115,19 @@ delete = overTrie . go
 -- To delete an entire 'Trie', you can write @'deleteChildren' []@.
 --
 -- @since 0.0.1.0
-deleteChildren :: Hashable k => [k] -> Trie k v -> STM ()
+deleteChildren :: (Hashable k) => [k] -> Trie k v -> STM ()
 deleteChildren = overTrie . go
   where
     go [] (Node here there) = do
         writeTVar here Nothing
         Map.reset there
-    go (k:ks) (Node _ there) = do
+    go (k : ks) (Node _ there) = do
         traverse_ (go ks) =<< Map.lookup k there
 
 -- | Delete the entire 'Trie'.
 --
 -- @since 0.0.1.0
-reset :: Hashable k => Trie k v -> STM ()
+reset :: (Hashable k) => Trie k v -> STM ()
 reset = deleteChildren []
 
 -- | Count the elements in the 'Trie'.
@@ -140,7 +140,8 @@ size = overTrie (go 0)
   where
     go !acc (Node here there) = do
         ma <- readTVar here
-        let here' = if isJust ma then acc + 1 else acc
+        let
+            here' = if isJust ma then acc + 1 else acc
         ListT.fold (\ !acc' (_, n) -> go acc' n) here' $ Map.listT there
 {-# INLINEABLE size #-}
 
@@ -208,13 +209,14 @@ listTGeneric readVar mapToListT = go mempty <=< lift . readVar . unTrie
         ma <- lift $ readVar here
         maybe id (ListT.cons . (,) prefix) ma $ do
             (k, v) <- mapToListT there
-            let !prefix' = prefix <> pure k
+            let
+                !prefix' = prefix <> pure k
             go prefix' v
 
 -- | Apply a 'Focus' to the path of the keys @[k]@.
 --
 -- @since 0.0.1.0
-focus :: Hashable k => Focus.Focus v STM r -> [k] -> Trie k v -> STM r
+focus :: (Hashable k) => Focus.Focus v STM r -> [k] -> Trie k v -> STM r
 focus (Focus.Focus conceal reveal) = overTrie . go
   where
     go [] (Node here _) = do
@@ -240,8 +242,7 @@ focus (Focus.Focus conceal reveal) = overTrie . go
                     Focus.Set !a ->
                         writeTVar here (Just a)
                 pure result
-
-    go (k:ks) (Node _ there) = do
+    go (k : ks) (Node _ there) = do
         mn <- Map.lookup k there
         case mn of
             Nothing -> do
@@ -261,9 +262,12 @@ focus (Focus.Focus conceal reveal) = overTrie . go
 -- | Use a 'Focus' on the path @[k]@ provided, with access to the children.
 --
 -- @since 0.0.1.0
-focusChildren :: Hashable k => Focus.Focus (Maybe v, Map k (TrieNode k v)) STM r -> [k] -> Trie k v -> STM r
+focusChildren
+    :: (Hashable k)
+    => Focus.Focus (Maybe v, Map k (TrieNode k v)) STM r -> [k] -> Trie k v -> STM r
 focusChildren (Focus.Focus _ reveal) [] t = do
-    let trieVar = unTrie t
+    let
+        trieVar = unTrie t
     Node here there <- readTVar trieVar
     mv <- readTVar here
     (result, change) <- reveal (mv, there)
@@ -277,8 +281,9 @@ focusChildren (Focus.Focus _ reveal) [] t = do
             newNode <- Node <$> newTVar mv' <*> pure newThere
             writeTVar trieVar newNode
     pure result
-focusChildren (Focus.Focus conceal reveal) (k:ks) t = do
-    let trieVar = unTrie t
+focusChildren (Focus.Focus conceal reveal) (k : ks) t = do
+    let
+        trieVar = unTrie t
     Node _ there <- readTVar trieVar
     mnode <- Map.lookup k there
     case mnode of
@@ -293,7 +298,6 @@ focusChildren (Focus.Focus conceal reveal) (k:ks) t = do
                     newNode <- Node <$> newTVar mv' <*> pure newThere
                     Map.insert newNode k there
             pure result
-
         Just n ->
             go there k ks n
   where
@@ -310,8 +314,7 @@ focusChildren (Focus.Focus conceal reveal) (k:ks) t = do
                 newNode <- Node <$> newTVar mv' <*> pure newThere
                 Map.insert newNode prevKey prevMap
         pure result
-
-    go _ _ (k':ks') (Node _ there) = do
+    go _ _ (k' : ks') (Node _ there) = do
         mnode <- Map.lookup k' there
         case mnode of
             Nothing -> do
