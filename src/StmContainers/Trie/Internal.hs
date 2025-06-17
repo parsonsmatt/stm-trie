@@ -4,6 +4,7 @@
 
 module StmContainers.Trie.Internal where
 
+import Data.Maybe
 import Control.Monad
 import Control.Monad.Trans
 import Control.Concurrent.STM
@@ -86,6 +87,28 @@ lookup keys' t = do
                 pure Nothing
             Just n ->
                 go ks n
+
+null :: Trie k v -> STM Bool
+null t = go =<< readTVar (unTrie t)
+  where
+    go (Node here there) = do
+        ma <- readTVar here
+        if isJust ma
+            then pure False
+            else do
+                thereEmpty <- Map.null there
+                if thereEmpty
+                    then pure True
+                    else do
+                        ListT.foldMaybe f False $ Map.listT there
+    f seen (_, v) = do
+        if seen
+            then pure Nothing
+            else do
+                kNull <- go v
+                if kNull
+                    then pure (Just kNull)
+                    else pure Nothing
 
 listT
     :: (forall a. Monoid (f a), Applicative f)

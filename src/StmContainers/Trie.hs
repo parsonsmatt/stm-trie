@@ -4,6 +4,7 @@ module StmContainers.Trie
     , newIO
     , insert
     , lookup
+    , null
     , toList
     , toListNonAtomic
     , listT

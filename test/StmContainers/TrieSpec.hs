@@ -32,3 +32,27 @@ spec = do
                 mv' <- atomically do
                     Trie.lookup ks t
                 mv' `shouldBe` Just v
+
+    describe "null" do
+        it "with empty map" do
+            t <- Trie.newIO
+            r <- atomically do
+                Trie.null t
+            r `shouldBe` True
+
+        it "with nokey map" do
+            t <- atomically do
+                t <- Trie.new :: STM (Trie.Trie String Char)
+                Trie.insert [] 'a' t
+                Trie.null t
+            t `shouldBe` False
+
+        it "with full map" do
+            t <- atomically do
+                t <- Trie.new
+                Trie.insert (replicate 10 "hello") 'a' t
+                Trie.insert ["hello", "world"] 'a' t
+                Trie.null t
+            t `shouldBe` False
+
+
