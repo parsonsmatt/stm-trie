@@ -39,7 +39,7 @@ overTrie k (Trie t) =
 -- @since 0.0.1.0
 new :: STM (Trie k v)
 new = do
-    leaf <- Node <$> newTVar Nothing <*> Map.new
+    leaf <- mkNewNode Nothing
     Trie <$> newTVar leaf
 
 -- | Create a new and empty 'Trie' in 'IO'. This is primarily useful for
@@ -69,9 +69,7 @@ insert keys !v = overTrie (go keys)
         mn <- Map.lookup k there
         case mn of
             Nothing -> do
-                there' <- Map.new
-                here <- newTVar Nothing
-                let newNode = Node here there'
+                newNode <- mkNewNode Nothing
                 Map.insert newNode k there
                 go ks newNode
             Just n' -> do
@@ -210,7 +208,6 @@ listTGeneric readVar mapToListT = go mempty <=< lift . readVar . unTrie
 
 -- | Apply a 'Focus' to the path of the keys @[k]@.
 --
---
 -- @since 0.0.1.0
 focus :: Hashable k => Focus.Focus v STM r -> [k] -> Trie k v -> STM r
 focus (Focus.Focus conceal reveal) = overTrie . go
@@ -250,10 +247,22 @@ focus (Focus.Focus conceal reveal) = overTrie . go
                     Focus.Remove ->
                         pure ()
                     Focus.Set a -> do
-                        here' <- newTVar (Just a)
-                        there' <- Map.new
-                        let newNode = Node here' there'
+                        newNode <- mkNewNode (Just a)
                         Map.insert newNode k there
                 pure result
             Just n ->
                 go ks n
+
+-- | Internal. Create a new 'TrieNode' and evaluate the contents of the
+-- inner 'Maybe' to WHNF.
+--
+-- @since 0.0.1.0
+mkNewNode :: Maybe v -> STM (TrieNode k v)
+mkNewNode Nothing = do
+    Node
+        <$> newTVar Nothing
+        <*> Map.new
+mkNewNode (Just !a) = do
+    Node
+        <$> newTVar (Just a)
+        <*> Map.new
