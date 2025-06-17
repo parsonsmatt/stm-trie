@@ -20,7 +20,7 @@ category:            Data structures, STM, Concurrency
 description:         Please see the README on GitHub at <https://github.com/parsonsmatt/stm-trie#readme>
 
 dependencies:
-- base >= 4.7 && < 5
+- base >= 4.15 && < 5
 - stm-containers
 - list-t
 - mtl
@@ -38,7 +38,7 @@ ghc-options:
 - -Wpartial-fields
 - -Wredundant-constraints
 
-default-language: GHC2021
+default-language: Haskell2010
 
 default-extensions:
   - DataKinds
@@ -46,8 +46,8 @@ default-extensions:
   - GADTs
   - TypeFamilies
   - TypeApplications
-  - RequiredTypeArguments
   - BlockArguments
+  - RankNTypes
 
 library:
   source-dirs: src

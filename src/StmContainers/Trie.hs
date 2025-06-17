@@ -1,19 +1,24 @@
 module StmContainers.Trie
     ( -- * Datatype
       Trie
+
       -- * Creation
     , new
     , newIO
+
       -- * Query
     , lookup
     , null
     , size
+
       -- * Modification
     , insert
     , delete
     , deleteChildren
     , reset
     , focus
+    , focusChildren
+
       -- * Consuming
     , toList
     , toListNonAtomic
@@ -22,5 +27,5 @@ module StmContainers.Trie
     , listTGeneric
     ) where
 
-import Prelude ()
 import StmContainers.Trie.Internal
+import Prelude ()
