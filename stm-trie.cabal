@@ -41,18 +41,18 @@ library
       GADTs
       TypeFamilies
       TypeApplications
-      RequiredTypeArguments
       BlockArguments
+      RankNTypes
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      base >=4.7 && <5
+      base >=4.15 && <5
     , focus
     , hashable
     , list-t
     , mtl
     , stm
     , stm-containers
-  default-language: GHC2021
+  default-language: Haskell2010
 
 test-suite stm-trie-test
   type: exitcode-stdio-1.0
@@ -70,14 +70,14 @@ test-suite stm-trie-test
       GADTs
       TypeFamilies
       TypeApplications
-      RequiredTypeArguments
       BlockArguments
+      RankNTypes
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-tool-depends:
       hspec-discover:hspec-discover
   build-depends:
       QuickCheck
-    , base >=4.7 && <5
+    , base >=4.15 && <5
     , containers
     , focus
     , hashable
@@ -89,4 +89,4 @@ test-suite stm-trie-test
     , stm
     , stm-containers
     , stm-trie
-  default-language: GHC2021
+  default-language: Haskell2010

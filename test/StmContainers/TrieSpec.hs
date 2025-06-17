@@ -1,19 +1,22 @@
-{-# language ViewPatterns #-}
+{-# LANGUAGE ViewPatterns #-}
+
 module StmContainers.TrieSpec where
 
-import Data.Traversable
-import Control.Monad.IO.Class
-import qualified Data.Set as Set
-import Data.Foldable
-import Test.Hspec
-import Test.Hspec.QuickCheck (prop)
-import Test.Hspec.Hedgehog
-import StmContainers.Trie.Internal ()
-import qualified StmContainers.Trie as Trie
 import Control.Concurrent.STM
-import Test.QuickCheck (NonEmptyList(..))
+import Control.Monad
+import Control.Monad.IO.Class
+import Data.Foldable
+import qualified Data.Set as Set
+import Data.Traversable
+import qualified Focus
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
+import qualified StmContainers.Trie as Trie
+import StmContainers.Trie.Internal ()
+import Test.Hspec
+import Test.Hspec.Hedgehog
+import Test.Hspec.QuickCheck (prop)
+import Test.QuickCheck (NonEmptyList (..))
 
 spec :: Spec
 spec = do
@@ -29,7 +32,8 @@ spec = do
             mr <- atomically do
                 t <- Trie.new @String @Char
                 Trie.insert path 'a' t
-                let pathPlus = path <> [extra]
+                let
+                    pathPlus = path <> [extra]
                 Trie.insert (path <> [extra]) 'a' t
                 Trie.delete path t
                 (,) <$> Trie.lookup path t <*> Trie.lookup pathPlus t
@@ -44,17 +48,20 @@ spec = do
                 Trie.insert ["hello", "yes"] 1 t
                 Trie.insert ["hello", "yes"] 2 t
             xs <- Trie.toListNonAtomic t
-            xs `shouldMatchList`
-                [ ( ["hello", "world"]
-                  , (3 :: Int)
-                  )
-                , ( ["hello", "yes"]
-                  , (2 :: Int)
-                  )
-                , ( ["goodbye"]
-                  , 1
-                  )
-                ]
+            xs
+                `shouldMatchList` [
+                                      ( ["hello", "world"]
+                                      , (3 :: Int)
+                                      )
+                                  ,
+                                      ( ["hello", "yes"]
+                                      , (2 :: Int)
+                                      )
+                                  ,
+                                      ( ["goodbye"]
+                                      , 1
+                                      )
+                                  ]
             forM_ xs \(ks, v) -> do
                 mv' <- atomically do
                     Trie.lookup ks t
@@ -98,7 +105,6 @@ spec = do
                 Trie.null t
             r `shouldBe` True
 
-
     describe "delete" do
         it "works" do
             xs <- atomically do
@@ -108,11 +114,12 @@ spec = do
                 Trie.delete ["hello"] t
                 Trie.delete ["hello", "world"] t
                 Trie.toList t
-            xs `shouldMatchList`
-                [ ( ["hello", "goodbye"]
-                  , 'b'
-                  )
-                ]
+            xs
+                `shouldMatchList` [
+                                      ( ["hello", "goodbye"]
+                                      , 'b'
+                                      )
+                                  ]
 
     describe "deleteChildren" do
         it "works" do
@@ -149,7 +156,7 @@ spec = do
 
             keysToDelete <- forAll do
                 i <- Gen.integral (Range.linear 1 10)
-                fmap Set.fromList $ for [0.. i :: Int] \_ ->
+                fmap Set.fromList $ for [0 .. i :: Int] \_ ->
                     Gen.element ks
 
             r <- liftIO $ atomically do
@@ -161,3 +168,18 @@ spec = do
                 Trie.size t
 
             r === (length ks - length keysToDelete)
+
+    describe "focus" do
+        it "works" do
+            r <- atomically do
+                t <- Trie.new
+                Trie.insert ["hello", "goodbye"] 'a' t
+                Trie.insert ["hello", "goodbye", "ok"] 'a' t
+                mr <- Trie.focus (Focus.lookup <* Focus.delete) ["hello", "goodbye"] t
+                r <- Trie.lookup ["hello", "goodbye"] t
+                r' <- Trie.lookup ["hello", "goodbye", "ok"] t
+                pure do
+                    r `shouldBe` Nothing
+                    mr `shouldBe` Just 'a'
+                    r' `shouldBe` Just 'a'
+            r
