@@ -42,6 +42,7 @@ library
       TypeFamilies
       TypeApplications
       BlockArguments
+      RankNTypes
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       base >=4.7 && <5
@@ -51,7 +52,7 @@ library
     , mtl
     , stm
     , stm-containers
-  default-language: GHC2021
+  default-language: Haskell2010
 
 test-suite stm-trie-test
   type: exitcode-stdio-1.0
@@ -70,6 +71,7 @@ test-suite stm-trie-test
       TypeFamilies
       TypeApplications
       BlockArguments
+      RankNTypes
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-tool-depends:
       hspec-discover:hspec-discover
@@ -87,4 +89,4 @@ test-suite stm-trie-test
     , stm
     , stm-containers
     , stm-trie
-  default-language: GHC2021
+  default-language: Haskell2010
