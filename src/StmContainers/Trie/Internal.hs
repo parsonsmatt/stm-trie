@@ -57,9 +57,7 @@ newIO = do
 --
 -- @since 0.0.1.0
 insert :: Hashable k => [k] -> v -> Trie k v -> STM ()
-insert keys' !v t = do
-    node <- readTVar (unTrie t)
-    go keys' node
+insert keys !v = overTrie (go keys)
   where
     go [] (Node here _) =
         writeTVar here (Just v)
@@ -78,10 +76,11 @@ insert keys' !v t = do
             Just n' -> do
                 go ks n'
 
+-- | Lookup an element at the path given by @[k]@.
+--
+-- @since 0.0.1.0
 lookup :: Hashable k => [k] -> Trie k v -> STM (Maybe v)
-lookup keys' t = do
-    node <- readTVar (unTrie t)
-    go keys' node
+lookup = overTrie . go
   where
     go [] (Node here _) = do
         readTVar here
@@ -96,8 +95,10 @@ lookup keys' t = do
 -- | Deletes the entry located precisely at the path determined by @[k]@.
 -- This will not delete other entries that have @[k]@ as a prefix. For
 -- that, see 'deleteUnder'.
+--
+-- @since 0.0.1.0
 delete :: Hashable k => [k] -> Trie k v -> STM ()
-delete keys = overTrie (go keys)
+delete = overTrie . go
   where
     go [] (Node here _) =
         writeTVar here Nothing
@@ -105,8 +106,14 @@ delete keys = overTrie (go keys)
         mn <- Map.lookup k there
         forM_ mn (go ks)
 
-deleteUnder :: Hashable k => [k] -> Trie k v -> STM ()
-deleteUnder = overTrie . go
+-- | Delete the value located at the path @[k]@ and also all children of
+-- that path.
+--
+-- To delete an entire 'Trie', you can write @'deleteChildren' []@.
+--
+-- @since 0.0.1.0
+deleteChildren :: Hashable k => [k] -> Trie k v -> STM ()
+deleteChildren = overTrie . go
   where
     go [] (Node here there) = do
         writeTVar here Nothing
@@ -114,8 +121,11 @@ deleteUnder = overTrie . go
     go (k:ks) (Node _ there) = do
         traverse_ (go ks) =<< Map.lookup k there
 
+-- | Return whether or not the 'Trie' has an elements.
+--
+-- @since 0.0.1.0
 null :: Trie k v -> STM Bool
-null t = go =<< readTVar (unTrie t)
+null = overTrie go
   where
     go (Node here there) = do
         ma <- readTVar here
@@ -127,6 +137,7 @@ null t = go =<< readTVar (unTrie t)
                     then pure True
                     else do
                         ListT.foldMaybe f False $ Map.listT there
+
     f seen (_, v) = do
         if seen
             then pure Nothing

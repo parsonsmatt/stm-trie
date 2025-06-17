@@ -76,7 +76,9 @@ test-suite stm-trie-test
   build-tool-depends:
       hspec-discover:hspec-discover
   build-depends:
-      base >=4.7 && <5
+      QuickCheck
+    , base >=4.7 && <5
+    , containers
     , focus
     , hashable
     , hspec

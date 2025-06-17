@@ -10,7 +10,7 @@ module StmContainers.Trie
       -- * Modification
     , insert
     , delete
-    , deleteUnder
+    , deleteChildren
       -- * Consuming
     , toList
     , toListNonAtomic

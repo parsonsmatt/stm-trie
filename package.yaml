@@ -63,5 +63,7 @@ tests:
     dependencies:
     - stm-trie
     - hspec
+    - QuickCheck
+    - containers
     build-tools:
       - hspec-discover
