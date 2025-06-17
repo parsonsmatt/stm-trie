@@ -41,7 +41,6 @@ library
       GADTs
       TypeFamilies
       TypeApplications
-      RequiredTypeArguments
       BlockArguments
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
@@ -70,7 +69,6 @@ test-suite stm-trie-test
       GADTs
       TypeFamilies
       TypeApplications
-      RequiredTypeArguments
       BlockArguments
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-tool-depends:

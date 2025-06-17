@@ -46,7 +46,6 @@ default-extensions:
   - GADTs
   - TypeFamilies
   - TypeApplications
-  - RequiredTypeArguments
   - BlockArguments
 
 library:
