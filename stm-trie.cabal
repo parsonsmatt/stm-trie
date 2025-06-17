@@ -81,7 +81,9 @@ test-suite stm-trie-test
     , containers
     , focus
     , hashable
+    , hedgehog
     , hspec
+    , hspec-hedgehog
     , list-t
     , mtl
     , stm

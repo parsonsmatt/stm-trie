@@ -63,6 +63,8 @@ tests:
     dependencies:
     - stm-trie
     - hspec
+    - hspec-hedgehog
+    - hedgehog
     - QuickCheck
     - containers
     build-tools:

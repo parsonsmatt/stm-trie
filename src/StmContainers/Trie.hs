@@ -7,10 +7,12 @@ module StmContainers.Trie
       -- * Query
     , lookup
     , null
+    , size
       -- * Modification
     , insert
     , delete
     , deleteChildren
+    , reset
       -- * Consuming
     , toList
     , toListNonAtomic

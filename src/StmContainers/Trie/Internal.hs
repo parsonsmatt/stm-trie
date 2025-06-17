@@ -121,6 +121,25 @@ deleteChildren = overTrie . go
     go (k:ks) (Node _ there) = do
         traverse_ (go ks) =<< Map.lookup k there
 
+-- | Delete the entire 'Trie'.
+--
+-- @since 0.0.1.0
+reset :: Hashable k => Trie k v -> STM ()
+reset = deleteChildren []
+
+-- | Count the elements in the 'Trie'.
+--
+-- This is $$O(n)$$ in the size of the 'Trie'.
+--
+-- @since 0.0.1.0
+size :: Trie k v -> STM Int
+size = overTrie (go 0)
+  where
+    go !acc (Node here there) = do
+        ma <- readTVar here
+        let here' = if isJust ma then acc + 1 else acc
+        ListT.fold (\ !acc' (_, n) -> go acc' n) here' $ Map.listT there
+
 -- | Return whether or not the 'Trie' has an elements.
 --
 -- @since 0.0.1.0

@@ -1,13 +1,19 @@
 {-# language ViewPatterns #-}
 module StmContainers.TrieSpec where
 
+import Data.Traversable
+import Control.Monad.IO.Class
+import qualified Data.Set as Set
+import Data.Foldable
 import Test.Hspec
-import Test.Hspec.QuickCheck
+import Test.Hspec.QuickCheck (prop)
+import Test.Hspec.Hedgehog
 import StmContainers.Trie.Internal ()
 import qualified StmContainers.Trie as Trie
 import Control.Concurrent.STM
-import Control.Monad
-import Test.QuickCheck
+import Test.QuickCheck (NonEmptyList(..))
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
 
 spec :: Spec
 spec = do
@@ -119,3 +125,39 @@ spec = do
                 Trie.delete ["hello", "world"] t
                 Trie.toList @[] t
             xs `shouldMatchList` [([], 'c')]
+
+    describe "size" do
+        it "works" $ hedgehog do
+            ks <- forAll do
+                Gen.set (Range.linear 1 100) do
+                    Gen.list (Range.linear 1 10) do
+                        Gen.string (Range.linear 1 30) Gen.unicode
+
+            r <- liftIO $ atomically do
+                t <- Trie.new @String
+                for_ (Set.toList ks) \k -> do
+                    Trie.insert k 'a' t
+                Trie.size t
+
+            r === length ks
+
+        it "works with deletions" $ hedgehog do
+            ks <- forAll do
+                Gen.set (Range.linear 1 100) do
+                    Gen.list (Range.linear 1 10) do
+                        Gen.string (Range.linear 1 30) Gen.unicode
+
+            keysToDelete <- forAll do
+                i <- Gen.integral (Range.linear 1 10)
+                fmap Set.fromList $ for [0.. i :: Int] \_ ->
+                    Gen.element ks
+
+            r <- liftIO $ atomically do
+                t <- Trie.new @String
+                for_ (Set.toList ks) \k -> do
+                    Trie.insert k 'a' t
+                for_ keysToDelete \k -> do
+                    Trie.delete k t
+                Trie.size t
+
+            r === (length ks - length keysToDelete)
